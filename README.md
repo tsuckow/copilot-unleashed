@@ -14,47 +14,50 @@
 
 **Every Copilot model. One login. Any device. Your server.**
 
-The only open-source web UI built on the official [`@github/copilot-sdk`](https://github.com/github/copilot-sdk).
+The only open-source web UI built on the official [`@github/copilot-sdk`](https://github.com/github/copilot-sdk). Self-host a ChatGPT-class experience powered by your GitHub Copilot subscription — with autopilot agents, live reasoning traces, native GitHub tools, and persistent sessions that sync between the CLI and the browser.
 
 <p align="center">
-  <img src="docs/screenshots/usecase-code-mobile.png" width="200" alt="Code generation — mobile">
-  &nbsp;
-  <img src="docs/screenshots/usecase-code-ipad.png" width="320" alt="Code generation — iPad">
-  &nbsp;
-  <img src="docs/screenshots/usecase-code-desktop.png" width="480" alt="Code generation — desktop">
+  <img src="docs/screenshots/usecase-autopilot-desktop.png" width="720" alt="Autopilot agent — reads a GitHub issue, implements the feature, runs tests, and opens a PR autonomously">
 </p>
-<p align="center">
-  <img src="docs/screenshots/usecase-autopilot-mobile.png" width="200" alt="Autopilot agent — mobile">
-  &nbsp;
-  <img src="docs/screenshots/usecase-autopilot-ipad.png" width="320" alt="Autopilot agent — iPad">
-  &nbsp;
-  <img src="docs/screenshots/usecase-autopilot-desktop.png" width="480" alt="Autopilot agent — desktop">
-</p>
-<p align="center">
-  <img src="docs/screenshots/usecase-reasoning-mobile.png" width="200" alt="Extended reasoning — mobile">
-  &nbsp;
-  <img src="docs/screenshots/usecase-reasoning-ipad.png" width="320" alt="Extended reasoning — iPad">
-  &nbsp;
-  <img src="docs/screenshots/usecase-reasoning-desktop.png" width="480" alt="Extended reasoning — desktop">
-</p>
+<p align="center"><em>Autopilot reads issue #88, implements the fix, runs tests, and opens a PR — zero intervention.</em></p>
 
-> Not affiliated with GitHub. Independent project. MIT licensed.
+<p align="center">
+  <img src="docs/screenshots/usecase-reasoning-desktop.png" width="520" alt="Extended reasoning — live thinking trace from Claude Opus 4.6">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/chat-mobile.png" width="180" alt="Mobile chat — touch-optimized dark UI">
+</p>
+<p align="center"><em>Live reasoning traces on desktop · Touch-optimized mobile UI</em></p>
+
+> Independent project — not affiliated with GitHub. MIT licensed.
+
+---
+
+## Why this exists
+
+The GitHub Copilot CLI is powerful, but it's stuck in your terminal. This project wraps the same official SDK in a web UI you can reach from any device — phone, tablet, laptop — with features the CLI doesn't have: persistent sessions, a visual plan editor, file and image attachments, custom webhook tools, and real-time streaming with a dark, touch-friendly interface.
+
+Your Copilot subscription already gives you access to Claude Opus 4.6, GPT-5.4, Gemini 3 Pro, and more through one account. This app lets you use them all from anywhere, on your own server, without handing your data to another SaaS.
 
 ---
 
 ## What you get
 
-- **Every Copilot model** — switch mid-conversation, keep full history
-- **Autopilot mode** — agents that plan, code, run tests, and open PRs autonomously
-- **Extended thinking** — live reasoning traces from Claude Opus 4.6 and Claude Sonnet 4.6
-- **GitHub MCP tools** — issues, PRs, code search, repos — built in
-- **Custom MCP servers** — plug in your own
-- **Custom webhook tools** — connect any API (Jira, Slack, internal services)
-- **File attachments** — drop in code, images, CSVs
-- **Persistent sessions** — resume any conversation, on any device
-- **CLI ↔ Browser sync** — sessions started in the Copilot CLI appear in the browser when sharing the same `COPILOT_CONFIG_DIR`
-- **Mobile-first dark UI** — touch-optimized, works everywhere
-- **Self-hosted** — your data never leaves your server
+- **Every Copilot model** — Claude Opus 4.6, GPT-5.4, Gemini 3 Pro, Claude Sonnet 4.6, and more — switch mid-conversation, keep full history
+- **Autopilot agents** — plan, code, run tests, and open PRs autonomously with live tool execution
+- **Extended thinking** — live reasoning traces from Claude Opus 4.6 and Claude Sonnet 4.6 with collapsible "Thinking…" blocks
+- **Native GitHub tools** — issues, PRs, code search, repos, Actions — built in via the GitHub MCP server
+- **Custom MCP servers** — plug in any MCP-compatible server with per-server headers, tool filtering, and timeout control
+- **Custom webhook tools** — connect Jira, Slack, databases, or internal APIs as callable tools
+- **Image vision** — attach images alongside code and documents; vision-capable models analyze them inline
+- **File & directory attachments** — drop in code files, images, CSVs, or whole directories with `@` mention autocomplete
+- **Issue & PR references** — type `#` to search and reference GitHub issues/PRs across all your repos
+- **Persistent sessions** — resume any conversation, on any device, with full checkpoint history
+- **CLI ↔ Browser sync** — sessions started in the Copilot CLI appear in the browser and vice versa
+- **Plan mode** — agent creates an editable execution plan before acting; bidirectional sync with `plan.md` on disk
+- **Fleet mode** — launch multi-agent parallel execution with per-agent status tracking
+- **Quota tracking** — see premium request usage, remaining balance, and reset date at a glance
+- **Mobile-first dark UI** — WCAG AA accessible, touch-optimized, reduced-motion support
+- **Self-hosted** — your data never leaves your server; deploy with Docker or `azd up`
 
 ---
 
@@ -64,17 +67,17 @@ The only open-source web UI built on the official [`@github/copilot-sdk`](https:
 
 > *"Add rate-limiting middleware to the API and write integration tests"* → done. *"Refactor the payment service to handle retries with exponential backoff"* → done.
 
-**Analyze anything.** Drop a CSV, a spreadsheet, a codebase. Ask questions in plain language.
+**Analyze anything.** Drop a CSV, a screenshot, a codebase. Ask questions in plain language. Vision-capable models read images directly.
 
-> *"Which product line had the highest return rate last quarter?"* · *"Cluster this support ticket data by root cause"*
+> *"Which product line had the highest return rate last quarter?"* · *"What's wrong with this UI layout?"* (with attached screenshot)
 
 **Review PRs from your phone.** Commuting? Ask Copilot to summarize any pull request, flag security issues in the diff, and draft review comments — no laptop needed.
 
 **Compare models on hard problems.** Ask GPT-5.4 for speed, switch to Claude Opus 4.6 for deep reasoning, then Gemini 3 Pro for a different angle. Same conversation, all history preserved.
 
-**Watch it think.** Enable extended thinking on Claude Opus 4.6 or Claude Sonnet 4.6 — see the live reasoning trace in a collapsible block before the answer. You see *how* it gets there, not just what it concludes.
+**Watch it think.** Enable extended thinking — see the live reasoning trace in a collapsible block before the answer. You see *how* it gets there, not just what it concludes.
 
-**Connect your own tools.** Define webhook tools in the settings UI. Copilot calls your Jira, your database, your internal APIs — as part of its agentic workflow.
+**Connect your own tools.** Define webhook tools or add MCP servers in the settings UI. Copilot calls your Jira, your database, your internal APIs — as part of its agentic workflow.
 
 > *"Is the auth bug ticket still open? If so, find the related PRs and summarize the discussion"* → calls your project tracker, then searches GitHub.
 
@@ -102,47 +105,13 @@ The agent reads the repo, writes the code, references the issue, links the PR.
 
 > *"Find all repos in my org that still use an end-of-life runtime, summarize what each service does, and draft upgrade issues for each one"*
 
-> *"Search all my repos for hardcoded secrets or credentials and show me exactly where they are"*
-
 **PR reviews from anywhere.**
 
 > *"Summarize what this PR changes, flag any security concerns in the diff, and draft inline review comments on the riskiest lines"*
 
 Read that on your commute. Reply, approve, or request changes — without opening VS Code.
 
-**The difference from other AI tools:** ChatGPT, Claude, Cursor, and Gemini all work *with* GitHub (you paste in code, you copy out diffs). This works *as* GitHub — the agent creates branches, pushes commits, files PRs, and responds to CI feedback natively, the same way the Copilot CLI does from your terminal, but accessible on any device.
-
----
-
-## vs. everything else
-
-| | ChatGPT | Claude.ai | Cursor | Windsurf | Copilot Web | Copilot CLI | **This** |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Mobile | ✅ | ✅ | — | — | — | — | ✅ |
-| All models | — | — | ✅ | partial | partial | ✅ | ✅ |
-| Autopilot agents | partial | partial | ✅ | ✅ | — | ✅ | ✅ |
-| Reasoning traces | partial | ✅ | partial | partial | — | ✅ | ✅ |
-| Custom MCP servers | — | — | ✅ | ✅ | — | ✅ | ✅ |
-| Custom webhook tools | — | — | — | — | — | — | ✅ |
-| Persistent sessions | ✅ | ✅ | partial | partial | — | — | ✅ |
-| Self-hosted | — | — | — | — | — | — | ✅ |
-
-### Cost to access all models
-
-| | Monthly price | Models unlocked | IDE required |
-|---|:---:|---|:---:|
-| ChatGPT Plus | ~$20 | OpenAI only (GPT-5.4, GPT-5 mini) | — |
-| ChatGPT Pro | ~$200 | OpenAI only, unlimited | — |
-| Claude Pro | $20 | Claude only (Sonnet 4.6, Haiku 4.5) | — |
-| Claude Max | $100+ | Claude only, 5–20× more usage | — |
-| Cursor Pro | $20 | GPT + Claude + Gemini | ✅ |
-| Cursor Pro+ | $60 | GPT + Claude + Gemini (3× usage) | ✅ |
-| Windsurf Pro | $15 | GPT + Claude + Gemini (500 credits/mo) | ✅ |
-| Copilot Pro | $10 | GPT + Claude + Gemini (300 premium req.) | — |
-| **Copilot Pro+ → This** | **$39** | **GPT-5.4 + Claude Opus 4.6 + Gemini 3 Pro + Grok Code Fast 1** | **—** |
-| ChatGPT + Claude + Gemini separately | $65+ | Full multi-vendor (3 separate UIs) | — |
-
-Copilot Pro+ at $39/month is the only way to get GPT-5.4, Claude Opus 4.6, Gemini 3 Pro, and Grok Code Fast 1 through a single subscription — at less than half the cost of buying each service individually. This app runs it all on mobile and desktop with autopilot agents, persistent sessions, and a self-hosted server you control.
+**The difference from other AI tools:** ChatGPT, Claude, and Gemini all work *with* GitHub — you paste in code, you copy out diffs. This works *as* GitHub — the agent creates branches, pushes commits, files PRs, and responds to CI feedback natively, the same way the Copilot CLI does from your terminal, but accessible on any device.
 
 ---
 
@@ -187,6 +156,7 @@ That's it. Container Apps, ACR, managed identity, TLS, monitoring — all provis
 | `PORT` | — | `3000` | Server port |
 | `ALLOWED_GITHUB_USERS` | — | — | Restrict access to specific users |
 | `BASE_URL` | — | `http://localhost:3000` | Cookie domain + WS origin check |
+| `GITHUB_REPO` | — | — | Optional `owner/repo` scope for issue search |
 
 <details>
 <summary>All options</summary>
@@ -323,13 +293,16 @@ Scopes: `copilot` (API access) + `read:user` (avatar) + `repo` (SDK tools need i
 <summary>Full security details</summary>
 
 - CSP headers, CSRF protection, HSTS, X-Frame-Options DENY
-- Rate limiting: 200 req / 15 min per IP
+- Rate limiting: 200 req / 15 min per IP (HTTP) + 30 msg / min per WebSocket connection
 - Secure cookies: httpOnly, secure (prod), sameSite: lax
 - DOMPurify on all rendered markdown
-- SSRF blocklist for custom webhook tools
-- 10,000 char message limit, 10MB upload limit
-- Per-tool permission prompts with 30s auto-deny
+- SSRF blocklist for custom webhook and MCP server URLs (IPv4 + IPv6 internal ranges, HTTPS required)
+- 10,000 char message limit, 10MB upload limit, extension allowlist
+- Per-tool permission prompts with 30s auto-deny countdown
+- Token revalidation on every WebSocket connect
+- Structured security event logging
 - Optional user allowlist via `ALLOWED_GITHUB_USERS`
+- CodeQL scanning + secret scanning via GitHub Advanced Security
 
 </details>
 
@@ -337,7 +310,7 @@ Scopes: `copilot` (API access) + `read:user` (avatar) + `repo` (SDK tools need i
 
 ## Built with
 
-SvelteKit 5 · Svelte 5 runes · TypeScript 5.7 · Node.js 24 · Vite · `ws` · Playwright · Docker · Bicep
+SvelteKit 5 · Svelte 5 runes · TypeScript 5.7 · Node.js 24 · `@github/copilot-sdk` · Vite · `ws` · Vitest · Playwright · Docker · Bicep
 
 ---
 
