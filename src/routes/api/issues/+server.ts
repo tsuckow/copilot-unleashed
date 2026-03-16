@@ -67,17 +67,15 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	}
 
 	const repo = getRepo();
-	if (!repo) {
-		return json({ items: [], error: 'Set GITHUB_REPO env var to enable issue search' });
-	}
-
 	const token = locals.session!.githubToken!;
 	const query = url.searchParams.get('q')?.trim() ?? '';
 
 	try {
+		// Scope to repo when detected, otherwise search all visible repos
+		const repoFilter = repo ? ` repo:${repo}` : '';
 		const searchQuery = query
-			? `${query} repo:${repo}`
-			: `repo:${repo} sort:updated`;
+			? `${query}${repoFilter}`
+			: `is:issue is:open${repoFilter} sort:updated`;
 
 		const apiUrl = new URL(`${GITHUB_API_URL}/search/issues`);
 		apiUrl.searchParams.set('q', searchQuery);
@@ -103,6 +101,9 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			title: item.title,
 			type: item.pull_request ? 'pr' : 'issue',
 			state: item.state,
+			repo: typeof item.repository_url === 'string'
+				? item.repository_url.replace('https://api.github.com/repos/', '')
+				: undefined,
 		}));
 
 		return json({ items });

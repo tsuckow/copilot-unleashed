@@ -79,6 +79,7 @@
     title: string;
     type: 'issue' | 'pr';
     state: string;
+    repo?: string;
   }
   let issueOpen = $state(false);
   let issueQuery = $state('');
@@ -565,12 +566,12 @@
     if (!textareaEl) return;
     const before = inputValue.slice(0, issueStartPos);
     const after = inputValue.slice(textareaEl.selectionStart);
-    inputValue = `${before}#${issue.number}${after ? '' : ' '}${after}`;
+    const ref = issue.repo ? `${issue.repo}#${issue.number}` : `#${issue.number}`;
+    inputValue = `${before}${ref}${after ? '' : ' '}${after}`;
     closeIssue();
     tick().then(() => {
       if (textareaEl) {
-        const numStr = String(issue.number);
-        const newPos = before.length + 1 + numStr.length + (after ? 0 : 1);
+        const newPos = before.length + ref.length + (after ? 0 : 1);
         textareaEl.selectionStart = newPos;
         textareaEl.selectionEnd = newPos;
         textareaEl.focus();
@@ -791,7 +792,7 @@
           <div class="mention-empty">No issues found</div>
         {:else}
           <ul class="mention-list" bind:this={issueListEl}>
-            {#each issueResults.slice(0, 8) as issue, i (issue.number)}
+            {#each issueResults.slice(0, 8) as issue, i (`${issue.repo ?? ''}#${issue.number}`)}
               <li
                 class="mention-item"
                 class:active={i === issueIndex}
@@ -801,6 +802,9 @@
                 onmouseenter={() => { issueIndex = i; }}
               >
                 <span class="issue-icon" aria-hidden="true">{issue.type === 'pr' ? '⑂' : '●'}</span>
+                {#if issue.repo}
+                  <span class="issue-repo">{issue.repo}</span>
+                {/if}
                 <span class="issue-number">#{issue.number}</span>
                 <span class="mention-path">{issue.title}</span>
                 <span class="issue-state" class:open={issue.state === 'open'} class:closed={issue.state !== 'open'}>{issue.state}</span>
@@ -1226,6 +1230,17 @@
   .issue-icon {
     flex-shrink: 0;
     font-size: 0.9em;
+  }
+
+  .issue-repo {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75em;
+    color: var(--fg-dim);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .issue-number {

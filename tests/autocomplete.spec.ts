@@ -177,12 +177,17 @@ test.describe('Autocomplete features', () => {
 			await expect(popover).toContainText('No issues found');
 		});
 
-		test('shows error feedback when repo is not configured', async ({ browser }) => {
+		test('shows repo name when results include repo info', async ({ browser }) => {
 			const { page } = await createAuthenticatedPage(browser);
 
 			await page.route('**/api/issues*', (route) =>
 				route.fulfill({
-					json: { items: [], error: 'Set GITHUB_REPO env var to enable issue search' },
+					json: {
+						items: [
+							{ number: 42, title: 'Fix login bug', type: 'issue', state: 'open', repo: 'octocat/hello-world' },
+							{ number: 7, title: 'Add tests', type: 'pr', state: 'open', repo: 'octocat/spoon-knife' },
+						],
+					},
 				}),
 			);
 
@@ -195,16 +200,16 @@ test.describe('Autocomplete features', () => {
 
 			const popover = page.locator('[aria-label="Issues and pull requests"]');
 			await expect(popover).toBeVisible();
-			await expect(popover).toContainText('Set GITHUB_REPO');
+			await expect(popover.locator('.issue-repo').first()).toContainText('octocat/hello-world');
 		});
 
-		test('inserts selected issue number into input', async ({ browser }) => {
+		test('inserts full repo#number reference for cross-repo issues', async ({ browser }) => {
 			const { page } = await createAuthenticatedPage(browser);
 
 			await page.route('**/api/issues*', (route) =>
 				route.fulfill({
 					json: {
-						items: [{ number: 42, title: 'Fix bug', type: 'issue', state: 'open' }],
+						items: [{ number: 42, title: 'Fix bug', type: 'issue', state: 'open', repo: 'octocat/hello-world' }],
 					},
 				}),
 			);
@@ -220,7 +225,7 @@ test.describe('Autocomplete features', () => {
 			await expect(popover.locator('.mention-item')).toHaveCount(1);
 
 			await textarea.press('Enter');
-			await expect(textarea).toHaveValue('#42 ');
+			await expect(textarea).toHaveValue('octocat/hello-world#42 ');
 		});
 
 		test('closes popover on Escape', async ({ browser }) => {
