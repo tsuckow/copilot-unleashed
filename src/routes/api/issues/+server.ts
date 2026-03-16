@@ -36,6 +36,15 @@ function getRepo(): string | null {
 		return cachedRepo || null;
 	}
 
+	// Try GITHUB_REPO env var first (works in Docker/cloud)
+	const envRepo = process.env.GITHUB_REPO?.trim();
+	if (envRepo && /^[^/]+\/[^/]+$/.test(envRepo)) {
+		cachedRepo = envRepo;
+		repoCacheTimestamp = now;
+		return cachedRepo;
+	}
+
+	// Fall back to git remote detection
 	try {
 		const remoteUrl = execSync('git remote get-url origin', {
 			encoding: 'utf-8',
@@ -59,7 +68,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 	const repo = getRepo();
 	if (!repo) {
-		return json({ items: [], error: 'Could not determine GitHub repository' });
+		return json({ items: [], error: 'Set GITHUB_REPO env var to enable issue search' });
 	}
 
 	const token = locals.session!.githubToken!;

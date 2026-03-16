@@ -92,4 +92,16 @@ describe('GET /api/files', () => {
 		const data = await response.json();
 		expect(data.files).toEqual(['safe.ts']);
 	});
+
+	it('returns error when git is not available', async () => {
+		vi.mocked(execSync).mockImplementation(((cmd: string) => {
+			if (typeof cmd === 'string' && cmd.startsWith('git rev-parse')) throw new Error('not a git repo');
+			throw new Error('not a git repo');
+		}) as typeof execSync);
+
+		const response = await GET(createEvent(''));
+		const data = await response.json();
+		expect(data.files).toEqual([]);
+		expect(data.error).toBe('No git workspace available');
+	});
 });

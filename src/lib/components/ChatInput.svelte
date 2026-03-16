@@ -69,6 +69,7 @@
   let mentionFiles = $state<string[]>([]);
   let mentionIndex = $state(0);
   let mentionLoading = $state(false);
+  let mentionError = $state('');
   let mentionListEl: HTMLUListElement | undefined = $state();
   let mentionFetchTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -85,6 +86,7 @@
   let issueResults = $state<IssueResult[]>([]);
   let issueIndex = $state(0);
   let issueLoading = $state(false);
+  let issueError = $state('');
   let issueListEl: HTMLUListElement | undefined = $state();
   let issueFetchTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -370,18 +372,22 @@
 
   async function fetchMentionFiles(query: string) {
     mentionLoading = true;
+    mentionError = '';
     try {
       const params = query ? `?q=${encodeURIComponent(query)}` : '';
       const res = await fetch(`/api/files${params}`);
       if (!res.ok) {
         mentionFiles = [];
+        mentionError = res.status === 401 ? 'Not authenticated' : 'Failed to load files';
         return;
       }
       const data = await res.json();
       mentionFiles = Array.isArray(data.files) ? data.files : [];
+      mentionError = data.error ?? '';
       mentionIndex = 0;
     } catch {
       mentionFiles = [];
+      mentionError = 'Failed to load files';
     } finally {
       mentionLoading = false;
     }
@@ -425,6 +431,7 @@
     mentionFiles = [];
     mentionQuery = '';
     mentionIndex = 0;
+    mentionError = '';
     if (mentionFetchTimer) {
       clearTimeout(mentionFetchTimer);
       mentionFetchTimer = undefined;
@@ -449,27 +456,30 @@
   }
 
   function handleMentionKeydown(event: KeyboardEvent): boolean {
-    if (!mentionOpen || mentionFiles.length === 0) return false;
+    if (!mentionOpen) return false;
 
     switch (event.key) {
+      case 'Escape':
+        event.preventDefault();
+        closeMention();
+        return true;
       case 'ArrowDown':
+        if (mentionFiles.length === 0) return false;
         event.preventDefault();
         mentionIndex = (mentionIndex + 1) % mentionFiles.length;
         scrollMentionIntoView();
         return true;
       case 'ArrowUp':
+        if (mentionFiles.length === 0) return false;
         event.preventDefault();
         mentionIndex = (mentionIndex - 1 + mentionFiles.length) % mentionFiles.length;
         scrollMentionIntoView();
         return true;
       case 'Enter':
       case 'Tab':
+        if (mentionFiles.length === 0) return false;
         event.preventDefault();
         selectMentionFile(mentionFiles[mentionIndex]);
-        return true;
-      case 'Escape':
-        event.preventDefault();
-        closeMention();
         return true;
       default:
         return false;
@@ -487,18 +497,22 @@
   // ── # Issue/PR autocomplete ─────────────────────────────────────
   async function fetchIssues(query: string) {
     issueLoading = true;
+    issueError = '';
     try {
       const params = query ? `?q=${encodeURIComponent(query)}` : '';
       const res = await fetch(`/api/issues${params}`);
       if (!res.ok) {
         issueResults = [];
+        issueError = res.status === 401 ? 'Not authenticated' : 'Failed to load issues';
         return;
       }
       const data = await res.json();
       issueResults = Array.isArray(data.items) ? data.items : [];
+      issueError = data.error ?? '';
       issueIndex = 0;
     } catch {
       issueResults = [];
+      issueError = 'Failed to load issues';
     } finally {
       issueLoading = false;
     }
@@ -540,6 +554,7 @@
     issueResults = [];
     issueQuery = '';
     issueIndex = 0;
+    issueError = '';
     if (issueFetchTimer) {
       clearTimeout(issueFetchTimer);
       issueFetchTimer = undefined;
@@ -565,27 +580,30 @@
   }
 
   function handleIssueKeydown(event: KeyboardEvent): boolean {
-    if (!issueOpen || issueResults.length === 0) return false;
+    if (!issueOpen) return false;
 
     switch (event.key) {
+      case 'Escape':
+        event.preventDefault();
+        closeIssue();
+        return true;
       case 'ArrowDown':
+        if (issueResults.length === 0) return false;
         event.preventDefault();
         issueIndex = (issueIndex + 1) % issueResults.length;
         scrollIssueIntoView();
         return true;
       case 'ArrowUp':
+        if (issueResults.length === 0) return false;
         event.preventDefault();
         issueIndex = (issueIndex - 1 + issueResults.length) % issueResults.length;
         scrollIssueIntoView();
         return true;
       case 'Enter':
       case 'Tab':
+        if (issueResults.length === 0) return false;
         event.preventDefault();
         selectIssue(issueResults[issueIndex]);
-        return true;
-      case 'Escape':
-        event.preventDefault();
-        closeIssue();
         return true;
       default:
         return false;
@@ -732,10 +750,14 @@
       </div>
     {/if}
 
-    {#if mentionOpen && (mentionFiles.length > 0 || mentionLoading)}
+    {#if mentionOpen}
       <div class="mention-popover" role="listbox" aria-label="File mentions">
         {#if mentionLoading && mentionFiles.length === 0}
           <div class="mention-loading">Searching files…</div>
+        {:else if mentionError && mentionFiles.length === 0}
+          <div class="mention-empty">{mentionError}</div>
+        {:else if mentionFiles.length === 0}
+          <div class="mention-empty">No files found</div>
         {:else}
           <ul class="mention-list" bind:this={mentionListEl}>
             {#each mentionFiles.slice(0, 8) as file, i (file)}
@@ -759,10 +781,14 @@
       </div>
     {/if}
 
-    {#if issueOpen && (issueResults.length > 0 || issueLoading)}
+    {#if issueOpen}
       <div class="mention-popover" role="listbox" aria-label="Issues and pull requests">
         {#if issueLoading && issueResults.length === 0}
           <div class="mention-loading">Searching issues…</div>
+        {:else if issueError && issueResults.length === 0}
+          <div class="mention-empty">{issueError}</div>
+        {:else if issueResults.length === 0}
+          <div class="mention-empty">No issues found</div>
         {:else}
           <ul class="mention-list" bind:this={issueListEl}>
             {#each issueResults.slice(0, 8) as issue, i (issue.number)}
@@ -1138,6 +1164,14 @@
     color: var(--fg-dim);
     font-family: var(--font-mono);
     font-size: 0.82em;
+  }
+
+  .mention-empty {
+    padding: var(--sp-2) var(--sp-3);
+    color: var(--fg-dim);
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    font-style: italic;
   }
 
   .mention-list {

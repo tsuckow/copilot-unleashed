@@ -26,10 +26,10 @@ function getWorkspaceRoot(): string {
 }
 
 /** List workspace files using git ls-files (respects .gitignore, fast) */
-function listWorkspaceFiles(): string[] {
+function listWorkspaceFiles(): { files: string[]; error?: string } {
 	const now = Date.now();
 	if (cachedFiles && now - cacheTimestamp < CACHE_TTL_MS) {
-		return cachedFiles;
+		return { files: cachedFiles };
 	}
 
 	try {
@@ -42,9 +42,9 @@ function listWorkspaceFiles(): string[] {
 			.split('\n')
 			.filter((line) => line.length > 0);
 		cacheTimestamp = now;
-		return cachedFiles;
+		return { files: cachedFiles };
 	} catch {
-		return [];
+		return { files: [], error: 'No git workspace available' };
 	}
 }
 
@@ -88,8 +88,12 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	}
 
 	const query = url.searchParams.get('q')?.trim() ?? '';
-	const allFiles = listWorkspaceFiles();
+	const { files: allFiles, error: listError } = listWorkspaceFiles();
 	const workspaceRoot = getWorkspaceRoot();
+
+	if (listError && allFiles.length === 0) {
+		return json({ files: [], error: listError });
+	}
 
 	if (!query) {
 		const files = allFiles
