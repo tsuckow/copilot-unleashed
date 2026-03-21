@@ -19,8 +19,21 @@ import {
   isValidTabId, countUserSessions, evictOldestUserSession,
   type PoolEntry,
 } from './session-pool.js';
-
 type SessionMiddleware = (req: any, res: any, next: () => void) => void;
+
+/** Minimal ChatMessage shape for session history reconstruction (mirrors src/lib/types/index.ts) */
+interface HistoryMessage {
+  id: string;
+  role: string;
+  content: string;
+  timestamp: number;
+  toolCallId?: string;
+  toolName?: string;
+  toolStatus?: string;
+  mcpServerName?: string;
+  mcpToolName?: string;
+  agentName?: string;
+}
 
 const MAX_MESSAGE_LENGTH = 10_000;
 const VALID_MESSAGE_TYPES = new Set([
@@ -193,6 +206,74 @@ function normalizeQuotaSnapshots(raw: Record<string, any> | undefined): Record<s
     };
   }
   return result;
+}
+
+let historyIdCounter = 0;
+function historyId(): string {
+  return `hist-${Date.now()}-${historyIdCounter++}`;
+}
+
+/** Map SDK session events from getMessages() to HistoryMessage[] for the client history. */
+function mapSessionEventsToHistory(events: any[]): HistoryMessage[] {
+  const messages: HistoryMessage[] = [];
+  for (const event of events) {
+    const ts = event.timestamp ? new Date(event.timestamp).getTime() : Date.now();
+    switch (event.type) {
+      case 'user.message':
+        if (event.data?.content) {
+          messages.push({ id: historyId(), role: 'user', content: event.data.content, timestamp: ts });
+        }
+        break;
+      case 'assistant.message':
+        if (event.data?.content) {
+          messages.push({ id: historyId(), role: 'assistant', content: event.data.content, timestamp: ts });
+        }
+        break;
+      case 'assistant.reasoning':
+        if (event.data?.content) {
+          messages.push({ id: historyId(), role: 'reasoning', content: event.data.content, timestamp: ts });
+        }
+        break;
+      case 'assistant.intent':
+        if (event.data?.intent) {
+          messages.push({ id: historyId(), role: 'intent', content: event.data.intent, timestamp: ts });
+        }
+        break;
+      case 'tool.execution_start':
+        messages.push({
+          id: historyId(),
+          role: 'tool',
+          content: event.data?.toolName ?? 'unknown',
+          timestamp: ts,
+          toolCallId: event.data?.toolCallId,
+          toolName: event.data?.toolName,
+          toolStatus: 'complete',
+          mcpServerName: event.data?.mcpServerName,
+          mcpToolName: event.data?.mcpToolName,
+        });
+        break;
+      case 'subagent.started':
+        if (event.data?.agentName) {
+          messages.push({
+            id: historyId(),
+            role: 'subagent',
+            content: event.data.description ?? event.data.agentName,
+            timestamp: ts,
+            agentName: event.data.agentName,
+          });
+        }
+        break;
+      case 'session.error':
+        if (event.data?.message) {
+          messages.push({ id: historyId(), role: 'error', content: event.data.message, timestamp: ts });
+        }
+        break;
+      // Skip ephemeral/streaming events: deltas, usage, turn_start/end, idle, etc.
+      default:
+        break;
+    }
+  }
+  return messages;
 }
 
 function wireSessionEvents(session: any, entry: PoolEntry, sessionId?: string): void {
@@ -1324,6 +1405,21 @@ export function setupWebSocket(
                 }
               } catch {
                 // Non-critical: plan panel will stay hidden
+              }
+
+              // Fetch and send conversation history for SDK-resumed sessions
+              if (resumed) {
+                try {
+                  const historyEvents = await connectionEntry.session.getMessages();
+                  const historyMessages = mapSessionEventsToHistory(historyEvents);
+                  if (historyMessages.length > 0) {
+                    poolSend(connectionEntry, { type: 'session_history', messages: historyMessages });
+                    console.log(`[RESUME] Sent ${historyMessages.length} history messages for session ${sessionId}`);
+                  }
+                } catch (histErr: any) {
+                  console.warn(`[RESUME] Failed to fetch session history: ${histErr.message}`);
+                  // Non-critical: resume proceeds without history
+                }
               }
 
               poolSend(connectionEntry, { type: 'session_resumed', sessionId });

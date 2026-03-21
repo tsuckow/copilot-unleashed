@@ -448,6 +448,12 @@ export function createChatStore(wsStore: WsStore): ChatStore {
         sessionDetail = msg.detail;
         break;
 
+      case 'session_history':
+        if (msg.messages.length > 0) {
+          messages = [...messages, ...msg.messages];
+        }
+        break;
+
       case 'session_resumed':
         currentSessionId = msg.sessionId;
         addInfoMessage(`Session resumed: ${msg.sessionId}`);

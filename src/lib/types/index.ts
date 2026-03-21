@@ -307,6 +307,11 @@ export interface SessionDetailMessage {
   detail: SessionDetail;
 }
 
+export interface SessionHistoryMessage {
+  type: 'session_history';
+  messages: ChatMessage[];
+}
+
 export interface SessionResumedMessage {
   type: 'session_resumed';
   sessionId: string;
@@ -574,6 +579,7 @@ export type ServerMessage =
   | QuotaMessage
   | SessionsMessage
   | SessionDetailMessage
+  | SessionHistoryMessage
   | SessionResumedMessage
   | SessionDeletedMessage
   | PlanMessage
