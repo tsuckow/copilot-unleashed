@@ -1,0 +1,119 @@
+import { createCopilotSession } from '../../copilot/session.js';
+import { getSkillDirectories } from '../../skills/scanner.js';
+import { config } from '../../config.js';
+import { poolSend } from '../session-pool.js';
+import { VALID_MODES } from '../constants.js';
+import { parseMcpServers } from '../mcp-servers.js';
+import { wireSessionEvents } from '../session-events.js';
+import { makeUserInputHandler, makePermissionHandler } from '../permissions.js';
+import type { MessageContext } from '../types.js';
+
+export async function handleNewSession(msg: any, ctx: MessageContext): Promise<void> {
+  const { connectionEntry, githubToken } = ctx;
+
+  if (connectionEntry.session) {
+    try { await connectionEntry.session.disconnect(); } catch { /* ignore */ }
+    connectionEntry.session = null;
+  }
+  connectionEntry.userInputResolve = null;
+  connectionEntry.permissionResolve = null;
+  connectionEntry.pendingUserInputPrompt = null;
+  connectionEntry.pendingPermissionPrompt = null;
+
+  try {
+    const customInstructions = typeof msg.customInstructions === 'string'
+      ? msg.customInstructions.slice(0, 2000)
+      : undefined;
+
+    const excludedTools = Array.isArray(msg.excludedTools)
+      ? msg.excludedTools.filter((t: unknown) => typeof t === 'string')
+      : undefined;
+
+    const infiniteSessions = msg.infiniteSessions && typeof msg.infiniteSessions === 'object'
+      ? {
+          enabled: msg.infiniteSessions.enabled !== false,
+          ...(typeof msg.infiniteSessions.backgroundThreshold === 'number' && {
+            backgroundCompactionThreshold: Math.max(0, Math.min(1, msg.infiniteSessions.backgroundThreshold)),
+          }),
+          ...(typeof msg.infiniteSessions.bufferThreshold === 'number' && {
+            bufferExhaustionThreshold: Math.max(0, Math.min(1, msg.infiniteSessions.bufferThreshold)),
+          }),
+        }
+      : undefined;
+
+    const permissionMode = msg.mode === 'autopilot' ? 'approve_all' as const : 'prompt' as const;
+
+    const customTools = Array.isArray(msg.customTools) ? msg.customTools.slice(0, 10) : undefined;
+
+    const mcpServers = parseMcpServers(msg.mcpServers);
+
+    const disabledSkills = Array.isArray(msg.disabledSkills)
+      ? msg.disabledSkills.filter((s: unknown) => typeof s === 'string')
+      : undefined;
+
+    const customAgents = Array.isArray(msg.customAgents)
+      ? msg.customAgents
+          .filter((a: unknown) => {
+            if (!a || typeof a !== 'object') return false;
+            const obj = a as Record<string, unknown>;
+            return typeof obj.name === 'string' && typeof obj.prompt === 'string';
+          })
+          .slice(0, 10)
+          .map((a: unknown) => {
+            const obj = a as Record<string, unknown>;
+            return {
+              name: obj.name as string,
+              displayName: typeof obj.displayName === 'string' ? obj.displayName : undefined,
+              description: typeof obj.description === 'string' ? obj.description : undefined,
+              tools: Array.isArray(obj.tools)
+                ? (obj.tools as unknown[]).filter((t): t is string => typeof t === 'string')
+                : undefined,
+              prompt: obj.prompt as string,
+            };
+          })
+      : undefined;
+
+    const skillDirectories = await getSkillDirectories();
+
+    connectionEntry.session = await createCopilotSession(connectionEntry.client, githubToken, {
+      model: msg.model,
+      reasoningEffort: msg.reasoningEffort,
+      customInstructions,
+      excludedTools,
+      customTools,
+      infiniteSessions,
+      onUserInputRequest: makeUserInputHandler(connectionEntry),
+      permissionMode,
+      onPermissionRequest: makePermissionHandler(connectionEntry),
+      mcpServers,
+      configDir: config.copilotConfigDir,
+      skillDirectories,
+      disabledSkills,
+      customAgents,
+      onHookEvent: (message) => poolSend(connectionEntry, message),
+    });
+
+    wireSessionEvents(connectionEntry.session, connectionEntry, connectionEntry.session?.sessionId);
+
+    // Set initial mode on the SDK session
+    if (msg.mode && VALID_MODES.has(msg.mode)) {
+      try {
+        await connectionEntry.session.rpc.mode.set({ mode: msg.mode });
+      } catch (modeErr: any) {
+        console.warn('Initial mode set failed:', modeErr.message);
+      }
+    }
+
+    poolSend(connectionEntry, {
+      type: 'session_created',
+      model: msg.model,
+      sessionId: connectionEntry.session?.sessionId,
+    });
+  } catch (err: any) {
+    console.error('Session creation error:', err.message);
+    poolSend(connectionEntry, {
+      type: 'error',
+      message: `Failed to create session: ${err.message}`,
+    });
+  }
+}

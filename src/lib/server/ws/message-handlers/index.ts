@@ -1,0 +1,37 @@
+import type { MessageContext } from '../types.js';
+import { handleNewSession } from './new-session.js';
+import { handleChat } from './chat.js';
+import { handleSetMode, handleAbort, handleSetModel, handleSetReasoning } from './mode-model.js';
+import { handleUserInputResponse, handlePermissionResponse } from './interactive.js';
+import { handleListTools, handleListAgents, handleSelectAgent, handleDeselectAgent } from './tools-agents.js';
+import { handleGetQuota, handleCompact } from './quota-compact.js';
+import { handleListSessions, handleDeleteSession, handleGetSessionDetail, handleListModels } from './session-management.js';
+import { handleResumeSession } from './resume-session.js';
+import { handleGetPlan, handleUpdatePlan, handleDeletePlan } from './plans.js';
+import { handleStartFleet } from './fleet.js';
+
+export const messageHandlers: Record<string, (msg: any, ctx: MessageContext) => Promise<void>> = {
+  new_session: handleNewSession,
+  message: handleChat,
+  list_models: handleListModels,
+  set_mode: handleSetMode,
+  abort: handleAbort,
+  set_model: handleSetModel,
+  set_reasoning: handleSetReasoning,
+  user_input_response: handleUserInputResponse,
+  permission_response: handlePermissionResponse,
+  list_tools: handleListTools,
+  list_agents: handleListAgents,
+  select_agent: handleSelectAgent,
+  deselect_agent: handleDeselectAgent,
+  get_quota: handleGetQuota,
+  compact: handleCompact,
+  list_sessions: handleListSessions,
+  resume_session: handleResumeSession,
+  delete_session: handleDeleteSession,
+  get_session_detail: handleGetSessionDetail,
+  get_plan: handleGetPlan,
+  update_plan: handleUpdatePlan,
+  delete_plan: handleDeletePlan,
+  start_fleet: handleStartFleet,
+};
