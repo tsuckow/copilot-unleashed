@@ -3,6 +3,8 @@ dist/
 build/
 .svelte-kit/
 .env
+.env.*
+!.env.example
 .env.local
 .sessions/
 *.log
@@ -18,3 +20,5 @@ bundled-session-store.db
 bundled-session-store.db-shm
 bundled-session-store.db-wal
 coverage/
+*.pem
+*.key
