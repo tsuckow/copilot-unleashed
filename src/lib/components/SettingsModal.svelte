@@ -147,8 +147,21 @@
       if (!notificationsEnabled) onToggleNotifications(true);
       return;
     }
-    // Settings say enabled but browser has no subscription — auto-re-subscribe
+    // Settings say enabled but browser has no subscription — auto-re-subscribe.
+    // First confirm the server has VAPID configured; if not (503), treat push as
+    // unsupported and clear the stored preference so we don't keep retrying.
     if (notificationsEnabled && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        const vapidRes = await fetch('/api/push/vapid-key');
+        if (!vapidRes.ok) {
+          onToggleNotifications(false);
+          notificationStatus = 'unsupported';
+          return;
+        }
+      } catch {
+        notificationStatus = 'granted-no-push';
+        return;
+      }
       notificationBusy = true;
       try {
         const newSub = await subscribeToPush();

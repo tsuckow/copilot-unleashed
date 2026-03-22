@@ -209,7 +209,7 @@ describe('subscribeToPush', () => {
 
 		const result = await subscribeToPush();
 		expect(result).toBeNull();
-		expect(console.error).toHaveBeenCalledWith('[PUSH] Failed to fetch VAPID key:', 500);
+		expect(console.warn).toHaveBeenCalledWith('[PUSH] VAPID key not available:', 500);
 	});
 
 	it('returns null when no VAPID public key is configured', async () => {
