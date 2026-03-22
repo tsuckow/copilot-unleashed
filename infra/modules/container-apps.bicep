@@ -201,6 +201,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'COPILOT_CONFIG_DIR', value: '/data/copilot-home' }
             { name: 'CHAT_STATE_PATH', value: '/data/chat-state' }
             { name: 'PUSH_STORE_PATH', value: '/data/push-subscriptions' }
+            { name: 'BODY_SIZE_LIMIT', value: '52428800' }
           ], hasAllowedUsers ? [
             { name: 'ALLOWED_GITHUB_USERS', secretRef: 'allowed-github-users' }
           ] : [], hasVapidKeys ? [

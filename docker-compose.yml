@@ -12,6 +12,7 @@ services:
       - SETTINGS_STORE_PATH=/data/settings
       - CHAT_STATE_PATH=/data/chat-state
       - PUSH_STORE_PATH=/data/push-subscriptions
+      - BODY_SIZE_LIMIT=52428800
       # VAPID keys (generate with: node scripts/generate-vapid-keys.mjs)
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}

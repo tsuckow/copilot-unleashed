@@ -204,7 +204,7 @@ describe('handle', () => {
 			const csp = response.headers.get('Content-Security-Policy');
 
 			expect(csp).toContain("connect-src 'self' ws: wss:");
-			expect(csp).toContain("img-src 'self' data: https://avatars.githubusercontent.com");
+			expect(csp).toContain("img-src 'self' data: blob: https://avatars.githubusercontent.com");
 		});
 
 		it('skips strict CSP in development while still applying always-on security headers', async () => {

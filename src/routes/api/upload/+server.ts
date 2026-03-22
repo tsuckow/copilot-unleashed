@@ -37,7 +37,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	let formData: FormData;
 	try {
 		formData = await request.formData();
-	} catch {
+	} catch (err: unknown) {
+		// Re-surface payload-too-large errors from adapter-node's body size limit
+		if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 413) {
+			return error(413, 'Upload too large. Maximum total upload size is 50 MB.');
+		}
 		return error(400, 'Invalid form data');
 	}
 

@@ -34,7 +34,7 @@ const securityHeaders: Handle = async ({ event, resolve }) => {
       "style-src 'self' 'unsafe-inline'",
       "connect-src 'self' ws: wss: https://*.push.services.mozilla.com https://*.push.apple.com https://fcm.googleapis.com https://*.notify.windows.com",
       "worker-src 'self' blob:",
-      "img-src 'self' data: https://avatars.githubusercontent.com",
+      "img-src 'self' data: blob: https://avatars.githubusercontent.com",
       "font-src 'self'",
       "frame-ancestors 'none'",
       "form-action 'self'",

@@ -285,11 +285,10 @@
 
   function handleGallerySelect() {
     attachMenuOpen = false;
-    // Use file input with image accept for gallery
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-    input.accept = 'image/*,video/*';
+    input.accept = 'image/*';
     input.onchange = (e) => handleFilesChanged(e);
     input.click();
   }
