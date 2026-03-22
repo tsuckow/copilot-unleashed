@@ -21,7 +21,12 @@ const RECONNECT_DEBOUNCE_MS = 500;
 const HEARTBEAT_INTERVAL = 25_000;
 const HEARTBEAT_TIMEOUT = 5_000;
 
-// Unique ID for this browser tab — persisted in localStorage to survive browser close/reopen for session resume
+// Unique ID for this browser tab — persisted in localStorage so closing and
+// reopening the tab can resume the server-side pool entry (session + chat state).
+// Note: Chrome/Edge can sync localStorage across devices when browser sync is
+// enabled, but that only causes collisions when the SAME browser is used on both
+// devices. Different browsers (e.g. Edge on desktop, Safari PWA on iOS) have
+// independent localStorage and are unaffected.
 const TAB_ID = typeof localStorage !== 'undefined'
   ? localStorage.getItem('copilot-tab-id') ?? (() => {
       const id = crypto.randomUUID();
@@ -203,18 +208,33 @@ export function createWsStore(): WsStore {
 
   /** Fire-and-forget: re-register the browser's push subscription with the server.
    *  Called on every WS connect so the server recovers subscriptions lost on redeploy
-   *  (EmptyDir volumes are wiped when the container replica is replaced). */
+   *  (EmptyDir volumes are wiped when the container replica is replaced).
+   *  Retries once after a short delay to handle auth cookie restoration race. */
   async function reRegisterPushSubscription(): Promise<void> {
-    try {
-      const sub = await getPushSubscription();
-      if (!sub) return;
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sub.toJSON()),
-      });
-    } catch {
-      // Non-fatal — push will self-heal on the next connect
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const sub = await getPushSubscription();
+        if (!sub) return;
+        const res = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub.toJSON()),
+        });
+        if (res.ok) return;
+        // 401 on first attempt: auth cookie may still be restoring — retry after delay
+        if (res.status === 401 && attempt === 0) {
+          await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        }
+        console.warn(`[PUSH] Re-registration failed: ${res.status}`);
+        return;
+      } catch {
+        if (attempt === 0) {
+          await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        }
+        // Non-fatal — push will self-heal on the next connect
+      }
     }
   }
 
@@ -280,7 +300,12 @@ export function createWsStore(): WsStore {
       ws = null;
 
       if (event.code === UNAUTHORIZED_CODE) {
-        window.location.reload();
+        // Hit the logout endpoint to clear the __copilot_auth cookie before
+        // reloading. Without this, the cookie restores the revoked token on
+        // reload and the user gets stuck in an auth loop instead of seeing
+        // the login screen.
+        fetch('/auth/logout', { method: 'POST' })
+          .finally(() => window.location.reload());
         return;
       }
 

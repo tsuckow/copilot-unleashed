@@ -222,7 +222,7 @@ describe('subscribeToPush', () => {
 
 		const result = await subscribeToPush();
 		expect(result).toBeNull();
-		expect(console.warn).toHaveBeenCalledWith('[PUSH] No VAPID public key configured');
+		expect(console.error).toHaveBeenCalledWith('[PUSH] No VAPID public key configured');
 	});
 
 	it('returns null and unsubscribes locally when server registration fails', async () => {

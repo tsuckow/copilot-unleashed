@@ -57,7 +57,7 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
 	}
 	const { publicKey } = await response.json();
 	if (!publicKey) {
-		console.warn('[PUSH] No VAPID public key configured');
+		console.error('[PUSH] No VAPID public key configured');
 		return null;
 	}
 
