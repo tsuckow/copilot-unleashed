@@ -125,7 +125,7 @@ You need a [GitHub account with Copilot](https://github.com/features/copilot#pri
 ```bash
 echo "GITHUB_CLIENT_ID=<your-id>" >> .env
 echo "SESSION_SECRET=$(openssl rand -hex 32)" >> .env
-docker compose up --build
+docker-compose up --build
 ```
 
 **Node.js 24+:**
